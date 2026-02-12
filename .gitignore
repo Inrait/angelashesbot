@@ -1,0 +1,15 @@
+# Секреты и локальные конфиги
+tgbot.env
+.env
+
+# Кэш Python
+__pycache__/
+*.pyc
+
+# Редакторы и ОС
+.vscode/
+.idea/
+.DS_Store
+
+# Логи
+*.log
