@@ -288,17 +288,7 @@ async def talk_to_ai(message: types.Message):
         )
 
 # ====== Запуск (один main, с защитой от конфликта) ======
-async def main():
-    log.info("Бот ANGELASHES запущен!")
-    # пробуем удалить webhook и сбросить pending updates
-    try:
-        await bot.delete_webhook(drop_pending_updates=True)
-        log.info("Попытка удалить webhook выполнена (drop_pending_updates=True).")
-    except Exception as e:
-        log.warning("Не удалось удалить webhook (возможно, его нет): %s", e)
-async def handle(request):
-return web.Response(text="Бот работает в режиме polling")
-
+# ====== Запуск ======
 async def handle(request):
     return web.Response(text="Бот работает в режиме polling")
 
@@ -309,33 +299,39 @@ async def run_web_server():
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', int(os.environ.get("PORT", 10000)))
     await site.start()
-    print("✅ Dummy HTTP server started")
-# -----------------------------------------
+    log.info("✅ Dummy HTTP server started on port %s", os.environ.get("PORT", 10000))
 
 async def main():
-    # ... твой существующий код ...
-    await run_web_server()  # <-- Добавь эту строку
-    await dp.start_polling(bot)
+    log.info("Бот ANGELASHES запущен!")
 
-    # запускаем polling с обработкой конфликта
+    # Запускаем dummy-сервер для Render
+    await run_web_server()
+
+    # Удаляем webhook и сбрасываем pending updates
+    try:
+        await bot.delete_webhook(drop_pending_updates=True)
+        log.info("Webhook удалён (drop_pending_updates=True).")
+    except Exception as e:
+        log.warning("Не удалось удалить webhook: %s", e)
+
+    # Запускаем polling с обработкой конфликта
     try:
         await dp.start_polling(bot)
     except TelegramConflictError as e:
         log.error("ConflictError при start_polling: %s", e)
-        # пробуем ещё раз удалить webhook и перезапустить один раз
         try:
             await bot.delete_webhook(drop_pending_updates=True)
-            log.info("Удалили webhook, пробуем перезапустить polling ещё раз.")
+            log.info("Повторно удалили webhook, пробуем ещё раз.")
             await dp.start_polling(bot)
         except Exception as e2:
             log.exception("Перезапуск polling не удался: %s", e2)
 
-# Универсальный запуск: работает в обычном Python и в Jupyter
+# Универсальный запуск
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except RuntimeError as e:
-        # скорее всего: "This event loop is already running" (Jupyter)
-        log.warning("asyncio.run failed (%s). Используем loop.create_task (Jupyter mode).", e)
+        # Для Jupyter / уже запущенного цикла
+        log.warning("asyncio.run не сработал (%s). Используем loop.create_task.", e)
         loop = asyncio.get_event_loop()
         loop.create_task(main())
