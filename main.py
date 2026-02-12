@@ -8,6 +8,7 @@ import nest_asyncio
 
 from pathlib import Path
 from dotenv import load_dotenv
+from aiohttp import web
 
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart
@@ -295,6 +296,22 @@ async def main():
         log.info("Попытка удалить webhook выполнена (drop_pending_updates=True).")
     except Exception as e:
         log.warning("Не удалось удалить webhook (возможно, его нет): %s", e)
+async def handle(request):
+return web.Response(text="Бот работает в режиме polling")
+async def run_web_server():
+    app = web.Application()
+    app.router.add_get('/', handle)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', int(os.environ.get("PORT", 10000)))
+    await site.start()
+    print(f"✅ Dummy HTTP server started on port {os.environ.get('PORT', 10000)}")
+# -----------------------------------------
+
+async def main():
+    # ... твой существующий код ...
+    await run_web_server()  # <-- Добавь эту строку
+    await dp.start_polling(bot)
 
     # запускаем polling с обработкой конфликта
     try:
