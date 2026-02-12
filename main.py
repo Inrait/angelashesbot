@@ -298,6 +298,10 @@ async def main():
         log.warning("Не удалось удалить webhook (возможно, его нет): %s", e)
 async def handle(request):
 return web.Response(text="Бот работает в режиме polling")
+
+async def handle(request):
+    return web.Response(text="Бот работает в режиме polling")
+
 async def run_web_server():
     app = web.Application()
     app.router.add_get('/', handle)
@@ -305,7 +309,7 @@ async def run_web_server():
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', int(os.environ.get("PORT", 10000)))
     await site.start()
-    print(f"✅ Dummy HTTP server started on port {os.environ.get('PORT', 10000)}")
+    print("✅ Dummy HTTP server started")
 # -----------------------------------------
 
 async def main():
